@@ -13,15 +13,19 @@
     <!-- Container Principal do Jogo -->
     <Transition name="fade" mode="out-in">
       <!-- TELA DE CELEBRAÇÃO FINAL -->
-      <div v-if="isSolved" key="victory" class="glass-card celebration-card text-center">
+      <div
+        v-if="isSolved"
+        key="victory"
+        class="glass-card celebration-card text-center"
+      >
         <!-- <div class="icon-wrapper victory-icon">🎉</div> -->
         <h1>{{ CONFIG.celebration.title }}</h1>
         <!-- <h2 class="subtitle">{{ CONFIG.celebration.subtitle }}</h2> -->
-        
+
         <div class="divider"></div>
-        
+
         <p class="celebration-message">{{ CONFIG.celebration.message }}</p>
-        
+
         <!-- <button class="btn btn-primary btn-reset" @click="resetGame">
           Jogar Novamente
         </button> -->
@@ -32,7 +36,6 @@
         <div class="card-header">
           <div class="d-flex justify-center">
             <span class="">{{ currentStageIndex + 1 }}</span>
-
           </div>
         </div>
 
@@ -40,30 +43,54 @@
 
         <div class="enigma-body text-center">
           <!-- Texto em itálico opcional -->
-          <p v-if="currentStage.italicText" class="italic-prompt">{{ currentStage.italicText }}</p>
+          <p v-if="currentStage.italicText" class="italic-prompt">
+            {{ currentStage.italicText }}
+          </p>
 
           <!-- Imagem opcional -->
           <div v-if="currentStage.image" class="enigma-image-container">
-            <img :src="currentStage.image" alt="Enigma Image" class="enigma-image" />
+            <img
+              :src="currentStage.image"
+              alt="Enigma Image"
+              class="enigma-image"
+            />
           </div>
 
           <!-- Descrição principal -->
           <!-- <p v-if="currentStage.description" class="enigma-description">{{ currentStage.description }}</p> -->
 
           <!-- Exibição do Enigma Textual -->
-          <div v-if="currentStage.prompt" :class="['enigma-display', { 'morse-font': currentStage.id === 1, 'italic-grey': currentStage.italicPrompt }]" style="white-space: pre-wrap; flex-direction: column; font-size: 1.6rem; line-height: 1.5;">
-            {{ currentStage.prompt }}
+          <div
+            v-if="currentStage.prompt"
+            :class="[
+              'enigma-display',
+              {
+                'morse-font': currentStage.id === 1,
+                'italic-grey': currentStage.italicPrompt,
+              },
+            ]"
+            style="
+              white-space: pre-wrap;
+              flex-direction: column;
+              font-size: 1.6rem;
+              line-height: 1.5;
+            "
+          >
+            <span v-if="hasDeer" class="deer-symbol">𐂂</span>
+            <span>{{ promptWithoutDeer }}</span>
           </div>
 
           <!-- Código binário opcional -->
-          <p v-if="currentStage.binary" class="binary-prompt">{{ currentStage.binary }}</p>
+          <p v-if="currentStage.binary" class="binary-prompt">
+            {{ currentStage.binary }}
+          </p>
 
           <!-- Coordenadas opcionais -->
           <div v-if="currentStage.coordinates" class="coordinates-prompt">
-            <div 
-              v-for="coord in parsedCoordinates" 
-              :key="coord.label" 
-              class="coord-item" 
+            <div
+              v-for="coord in parsedCoordinates"
+              :key="coord.label"
+              class="coord-item"
               :title="coord.tooltip"
             >
               {{ coord.label }}: {{ coord.value }}
@@ -71,11 +98,13 @@
           </div>
 
           <!-- Código HEX opcional -->
-          <p v-if="currentStage.hexCode" class="hex-prompt">{{ currentStage.hexCode }}</p>
+          <p v-if="currentStage.hexCode" class="hex-prompt">
+            {{ currentStage.hexCode }}
+          </p>
         </div>
 
         <form @submit.prevent="checkAnswer" class="answer-form">
-          <div class="input-wrapper" :class="{ 'shake': isShaking }">
+          <div class="input-wrapper" :class="{ shake: isShaking }">
             <input
               type="text"
               v-model="answerInput"
@@ -87,10 +116,10 @@
               :disabled="isTransitioning"
             />
           </div>
-          
+
           <div class="actions">
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               class="btn btn-primary"
               :disabled="!answerInput.trim() || isTransitioning"
             >
@@ -108,19 +137,20 @@
 
         <!-- Seção de Dicas -->
         <div class="hint-section">
-          <button 
-            type="button" 
-            class="btn-hint" 
+          <button
+            type="button"
+            class="btn-hint"
             @click="toggleHint"
             :class="{ 'hint-active': showHint }"
           >
-            <span class="hint-icon">💡</span>
-            <span>{{ showHint ? 'celare' : 'opusne tibi est auxilio?' }}</span>
+            <span>{{ showHint ? "celare" : "opusne tibi est auxilio?" }}</span>
           </button>
 
           <Transition name="expand">
             <div v-if="showHint" class="hint-box">
-              <p class="hint-text">{{ currentStage.hints[currentHintIndex] }}</p>
+              <p class="hint-text">
+                {{ currentStage.hints[currentHintIndex] }}
+              </p>
             </div>
           </Transition>
         </div>
@@ -130,20 +160,27 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue';
-import { CONFIG } from '../config.js';
-import { sound } from './SoundManager.js';
-import ConfettiCanvas from './ConfettiCanvas.vue';
+import {
+  ref,
+  computed,
+  watch,
+  nextTick,
+  onMounted,
+  onBeforeUnmount,
+} from "vue";
+import { CONFIG } from "../config.js";
+import { sound } from "./SoundManager.js";
+import ConfettiCanvas from "./ConfettiCanvas.vue";
 
 const currentStageIndex = ref(0);
-const answerInput = ref('');
+const answerInput = ref("");
 const attemptsCount = ref(0);
 const showHint = ref(false);
 const currentHintIndex = ref(0);
 const isSolved = ref(false);
 const isShaking = ref(false);
-const feedbackMessage = ref('');
-const feedbackType = ref(''); // 'error' ou 'success'
+const feedbackMessage = ref("");
+const feedbackType = ref(""); // 'error' ou 'success'
 const isTransitioning = ref(false);
 const inputField = ref(null);
 let activeMelodyNotes = [];
@@ -152,45 +189,68 @@ const currentStage = computed(() => CONFIG.stages[currentStageIndex.value]);
 
 const parsedCoordinates = computed(() => {
   if (!currentStage.value || !currentStage.value.coordinates) return [];
-  const lines = currentStage.value.coordinates.split('\n');
+  const lines = currentStage.value.coordinates.split("\n");
   const tooltips = {
-    'V': 'Volume',
-    'S': 'Shelf',
-    'W': 'Wall',
-    'P': 'Page'
+    V: "Volume",
+    S: "Shelf",
+    W: "Wall",
+    P: "Page",
   };
-  return lines.map(line => {
-    const parts = line.split(':');
-    if (parts.length < 2) return null;
-    const label = parts[0].trim();
-    const value = parts[1].trim();
-    return {
-      label,
-      value,
-      tooltip: tooltips[label] || label
-    };
-  }).filter(item => item !== null);
+  return lines
+    .map((line) => {
+      const parts = line.split(":");
+      if (parts.length < 2) return null;
+      const label = parts[0].trim();
+      const value = parts[1].trim();
+      return {
+        label,
+        value,
+        tooltip: tooltips[label] || label,
+      };
+    })
+    .filter((item) => item !== null);
+});
+
+const hasDeer = computed(() => {
+  return currentStage.value && currentStage.value.prompt && currentStage.value.prompt.startsWith("𐂂");
+});
+
+const promptWithoutDeer = computed(() => {
+  if (!currentStage.value || !currentStage.value.prompt) return "";
+  if (hasDeer.value) {
+    const firstNewline = currentStage.value.prompt.indexOf("\n");
+    return firstNewline !== -1 ? currentStage.value.prompt.substring(firstNewline + 1) : "";
+  }
+  return currentStage.value.prompt;
 });
 
 // Função para normalizar strings (remove acentos, espaços extras e deixa em maiúsculo)
 const normalizeString = (str) => {
-  if (!str) return '';
+  if (!str) return "";
   return str
     .toString()
     .toUpperCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "") // Remove acentos
-    .replace(/\s+/g, "")             // Remove todos os espaços
+    .replace(/\s+/g, "") // Remove todos os espaços
     .trim();
 };
 
-const checkAnswer = () => {
+const sha256 = async (text) => {
+  const msgBuffer = new TextEncoder().encode(text);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", msgBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+  return hashHex;
+};
+
+const checkAnswer = async () => {
   if (isTransitioning.value) return;
 
   const normalizedInput = normalizeString(answerInput.value);
-  const normalizedCorrect = normalizeString(currentStage.value.answer);
+  const hashedInput = await sha256(normalizedInput);
 
-  if (normalizedInput === normalizedCorrect) {
+  if (hashedInput === currentStage.value.answerHash) {
     handleCorrectAnswer();
   } else {
     handleIncorrectAnswer();
@@ -204,17 +264,17 @@ const handleCorrectAnswer = () => {
   sound.playSuccess();
 
   setTimeout(() => {
-    feedbackMessage.value = '';
-    
+    feedbackMessage.value = "";
+
     // Se ainda houver fases, vai para a próxima
     if (currentStageIndex.value < CONFIG.stages.length - 1) {
       currentStageIndex.value++;
-      answerInput.value = '';
+      answerInput.value = "";
       attemptsCount.value = 0;
       showHint.value = false;
       currentHintIndex.value = 0;
       isTransitioning.value = false;
-      
+
       // Focar de novo no input após a transição
       nextTick(() => {
         if (inputField.value) inputField.value.focus();
@@ -242,7 +302,10 @@ const handleIncorrectAnswer = () => {
   }
 
   // Se já estiver com dicas ativas e errar de novo, pode avançar o índice da dica
-  if (attemptsCount.value >= 4 && currentHintIndex.value < currentStage.value.hints.length - 1) {
+  if (
+    attemptsCount.value >= 4 &&
+    currentHintIndex.value < currentStage.value.hints.length - 1
+  ) {
     currentHintIndex.value++;
   }
 
@@ -258,31 +321,35 @@ const toggleHint = () => {
 
 // Injeção de comentários HTML dinâmicos para a Fase 2 (decifra.me style)
 const commentNode = ref(null);
-watch(currentStageIndex, (newIdx) => {
-  // Limpar comentário anterior se houver
-  if (commentNode.value && commentNode.value.parentNode) {
-    commentNode.value.parentNode.removeChild(commentNode.value);
-    commentNode.value = null;
-  }
+watch(
+  currentStageIndex,
+  (newIdx) => {
+    // Limpar comentário anterior se houver
+    if (commentNode.value && commentNode.value.parentNode) {
+      commentNode.value.parentNode.removeChild(commentNode.value);
+      commentNode.value = null;
+    }
 
-  const stage = CONFIG.stages[newIdx];
-  if (stage && stage.injectComment) {
-    const commentText = ` FASE 2: A resposta correta desta fase é "${stage.answer}" `;
-    commentNode.value = document.createComment(commentText);
-    
-    // Injeta o comentário dentro do elemento com id 'enigma-card' quando ele estiver no DOM
-    nextTick(() => {
-      const container = document.getElementById('enigma-card');
-      if (container) {
-        container.appendChild(commentNode.value);
-      }
-    });
-  }
-}, { immediate: true });
+    const stage = CONFIG.stages[newIdx];
+    if (stage && stage.injectComment) {
+      const commentText = ` FASE 2: A resposta correta desta fase é "${stage.answer}" `;
+      commentNode.value = document.createComment(commentText);
+
+      // Injeta o comentário dentro do elemento com id 'enigma-card' quando ele estiver no DOM
+      nextTick(() => {
+        const container = document.getElementById("enigma-card");
+        if (container) {
+          container.appendChild(commentNode.value);
+        }
+      });
+    }
+  },
+  { immediate: true },
+);
 
 const stopMelody = () => {
   if (activeMelodyNotes && activeMelodyNotes.length > 0) {
-    activeMelodyNotes.forEach(node => {
+    activeMelodyNotes.forEach((node) => {
       try {
         node.osc.stop();
       } catch (e) {
@@ -297,13 +364,13 @@ const resetGame = () => {
   stopMelody();
   sound.playClick();
   currentStageIndex.value = 0;
-  answerInput.value = '';
+  answerInput.value = "";
   attemptsCount.value = 0;
   showHint.value = false;
   currentHintIndex.value = 0;
   isSolved.value = false;
-  feedbackMessage.value = '';
-  
+  feedbackMessage.value = "";
+
   nextTick(() => {
     if (inputField.value) inputField.value.focus();
   });
@@ -372,7 +439,12 @@ onBeforeUnmount(() => {
 
 .divider {
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.08),
+    transparent
+  );
   margin: 10px 0 24px;
 }
 
@@ -409,8 +481,14 @@ onBeforeUnmount(() => {
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 0.8; }
-  50% { opacity: 1; text-shadow: 0 0 10px rgba(255, 255, 255, 0.1); }
+  0%,
+  100% {
+    opacity: 0.8;
+  }
+  50% {
+    opacity: 1;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+  }
 }
 
 .enigma-description {
@@ -447,7 +525,9 @@ onBeforeUnmount(() => {
 .answer-input:focus {
   background: rgba(255, 255, 255, 0.05);
   border-color: var(--glass-border-focus);
-  box-shadow: 0 0 15px rgba(255, 255, 255, 0.03), inset 0 2px 4px rgba(0, 0, 0, 0.15);
+  box-shadow:
+    0 0 15px rgba(255, 255, 255, 0.03),
+    inset 0 2px 4px rgba(0, 0, 0, 0.15);
 }
 
 .answer-input:disabled {
@@ -498,9 +578,20 @@ onBeforeUnmount(() => {
 }
 
 @keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  15%, 45%, 75% { transform: translateX(-8px); }
-  30%, 60%, 90% { transform: translateX(8px); }
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  15%,
+  45%,
+  75% {
+    transform: translateX(-8px);
+  }
+  30%,
+  60%,
+  90% {
+    transform: translateX(8px);
+  }
 }
 
 /* Feedback messages */
@@ -743,65 +834,77 @@ onBeforeUnmount(() => {
   text-align: left;
 }
 
+.deer-symbol {
+  font-size: 3.5rem; /* Aumenta consideravelmente o tamanho do cervo */
+  margin-bottom: 12px;
+  display: block;
+  line-height: 1.1;
+}
+
 /* Mobile Responsiveness Overrides */
 @media (max-width: 480px) {
+  .deer-symbol {
+    font-size: 2.8rem;
+    margin-bottom: 8px;
+  }
+
   .glass-card {
     padding: 28px 20px;
     border-radius: 18px;
   }
-  
+
   .stage-title {
     font-size: 1.25rem;
   }
-  
+
   .enigma-display {
     font-size: 1.4rem;
     margin: 15px 0;
     min-height: auto;
   }
-  
+
   .enigma-display.morse-font {
     font-size: 2rem;
     letter-spacing: 0.12em;
   }
-  
+
   .italic-prompt {
     font-size: 1.05rem;
     margin-bottom: 12px;
   }
-  
+
   .binary-prompt {
     font-size: 0.75rem;
     margin: 16px 0;
   }
-  
+
   .coordinates-prompt {
     font-size: 1rem;
     margin: 12px 0;
   }
-  
+
   .hex-prompt {
     font-size: 0.65rem;
     padding: 10px;
     max-height: 100px;
   }
-  
+
   .answer-input {
     padding: 12px 16px;
     font-size: 1rem;
     border-radius: 10px;
   }
-  
+
   .btn {
     padding: 12px 20px;
     font-size: 0.95rem;
     border-radius: 10px;
   }
-  
+
   .celebration-card {
     padding: 32px 20px;
   }
-  
+
   .celebration-message {
     font-size: 0.95rem;
     line-height: 1.6;
